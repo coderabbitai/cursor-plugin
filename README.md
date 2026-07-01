@@ -9,7 +9,7 @@ This repository packages CodeRabbit for Cursor users with:
 - Natural-language skills for code review and CodeRabbit PR autofix
 - Cursor command prompts for repeatable review and autofix workflows
 - A dedicated CodeRabbit review agent
-- Safety rules and documentation for review output, GitHub PR threads, and local fixes
+- Safety guidance for review output, GitHub PR threads, and local fixes
 
 ## Requirements
 
@@ -121,20 +121,16 @@ The plugin does not bulk-apply reviewer prompts. Cursor must inspect the local c
 .
 +-- .cursor-plugin/
 |   +-- plugin.json
-|   +-- marketplace.json
 +-- agents/
 |   +-- code-reviewer.md
 +-- commands/
 |   +-- coderabbit-autofix.md
 |   +-- coderabbit-review.md
-+-- rules/
-|   +-- coderabbit-safety.mdc
 +-- scripts/
 |   +-- validate-plugin.mjs
 +-- skills/
     +-- autofix/
     |   +-- SKILL.md
-    |   +-- github.md
     +-- code-review/
         +-- SKILL.md
 ```
@@ -151,8 +147,8 @@ The validator checks:
 
 - Cursor manifest fields
 - Manifest component paths
-- Marketplace metadata
-- Required frontmatter for skills, agents, commands, and rules
+- Plugin metadata
+- Required frontmatter for skills, agents, and commands
 - Accidental em dashes in repository text files
 
 ## Publishing

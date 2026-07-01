@@ -135,43 +135,12 @@ if (plugin) {
     fail(`.cursor-plugin/plugin.json: description must be "${expectedPluginDescription}"`);
   }
 
-  for (const field of ["logo", "skills", "agents", "commands", "rules"]) {
+  for (const field of ["logo", "skills", "agents", "commands"]) {
     const value = plugin[field];
     if (Array.isArray(value)) {
       value.forEach((item) => assertPathExists(`.cursor-plugin/plugin.json ${field}`, item));
     } else if (typeof value === "string" && !/^https?:\/\//.test(value)) {
       assertPathExists(`.cursor-plugin/plugin.json ${field}`, value);
-    }
-  }
-}
-
-const marketplace = readJson(".cursor-plugin/marketplace.json");
-if (marketplace) {
-  if (!marketplace.name) {
-    fail(".cursor-plugin/marketplace.json: missing name");
-  }
-
-  if (!Array.isArray(marketplace.plugins) || marketplace.plugins.length === 0) {
-    fail(".cursor-plugin/marketplace.json: plugins must contain at least one plugin");
-  } else {
-    if (marketplace.owner?.name !== "CodeRabbit") {
-      fail('.cursor-plugin/marketplace.json: owner.name must be "CodeRabbit"');
-    }
-
-    if (marketplace.metadata?.description !== expectedPluginDescription) {
-      fail(`.cursor-plugin/marketplace.json: metadata.description must be "${expectedPluginDescription}"`);
-    }
-
-    for (const entry of marketplace.plugins) {
-      if (!entry.name || !entry.source) {
-        fail(".cursor-plugin/marketplace.json: each plugin entry needs name and source");
-      }
-      if (plugin && entry.name !== plugin.name) {
-        fail(`.cursor-plugin/marketplace.json: plugin entry ${entry.name} does not match ${plugin.name}`);
-      }
-      if (entry.description !== expectedPluginDescription) {
-        fail(`.cursor-plugin/marketplace.json: plugin entry description must be "${expectedPluginDescription}"`);
-      }
     }
   }
 }
@@ -186,10 +155,6 @@ for (const file of walk("agents").filter((item) => item.endsWith(".md"))) {
 
 for (const file of walk("commands").filter((item) => item.endsWith(".md") || item.endsWith(".txt"))) {
   requireFrontmatterFields(file, ["name", "description"]);
-}
-
-for (const file of walk("rules").filter((item) => item.endsWith(".mdc"))) {
-  requireFrontmatterFields(file, ["description", "alwaysApply"]);
 }
 
 checkNoEmDashes();

@@ -8,7 +8,7 @@ Do not open a public issue for vulnerabilities, credential exposure, or prompt-i
 
 ## Supported Surface
 
-This plugin packages instructions, commands, rules, and metadata for Cursor. It does not ship a long-running service or store credentials.
+This plugin packages instructions, commands, skills, and metadata for Cursor. It does not ship a long-running service or store credentials.
 
 Sensitive operations are delegated to:
 

@@ -22,8 +22,7 @@ No package install is required for the validator.
 ## Release Checklist
 
 1. Update `.cursor-plugin/plugin.json` version.
-2. Update `CHANGELOG.md`.
-3. Run `npm test`.
-4. Test local install from `~/.cursor/plugins/local/coderabbit`.
-5. Confirm README install and usage steps.
-6. Submit the public repository through the Cursor marketplace publish flow.
+2. Run `npm test`.
+3. Test local install from `~/.cursor/plugins/local/coderabbit`.
+4. Confirm README install and usage steps.
+5. Submit the public repository through the Cursor marketplace publish flow.
