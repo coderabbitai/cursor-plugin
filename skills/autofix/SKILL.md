@@ -2,7 +2,7 @@
 name: autofix
 description: Safely review and apply unresolved CodeRabbit GitHub PR review-thread feedback in Cursor with per-fix approval.
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
   description: "Safely apply unresolved CodeRabbit GitHub PR review-thread feedback in Cursor with per-fix approval."
   triggers:
     - coderabbit autofix
