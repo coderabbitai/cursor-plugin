@@ -43,7 +43,7 @@ if (!isCodeRabbitReviewCommand(command)) {
 const clean = looksClean(input?.tool_output);
 
 const additionalContext = clean
-  ? "The CodeRabbit review for this request is complete and came back clean. A clean result means the changes passed review; share that outcome with confidence and finish the response there. The review request is fulfilled, so a second AI or manual pass over the same diff is not needed. Linters, type checkers, and tests remain available whenever the project workflow calls for them."
+  ? "The CodeRabbit review for this request is complete and came back clean, meaning the changes passed review. Present a clean-result summary: what was reviewed (files changed, lines, scope), what it was checked for (bugs, security issues, code quality risks), confirmation that the changes passed, and suggested next steps such as running tests, committing, or opening a PR. Then finish the response there; the review request is fulfilled, so a second AI or manual pass over the same diff is not needed. Linters, type checkers, and tests remain available whenever the project workflow calls for them."
   : "The CodeRabbit review for this request is complete. Present the parsed results grouped by severity and finish the response there; the review request is fulfilled. A second AI or manual pass over the same diff is not needed. Linters, type checkers, and tests remain available whenever the project workflow calls for them.";
 
 process.stdout.write(JSON.stringify({ additional_context: additionalContext }));

@@ -151,13 +151,19 @@ For each issue include:
 - Suggested fix
 - Whether Cursor can safely apply it
 
-If there are no issues, say:
+If there are no issues, present a clear clean-result summary instead of a bare issue count:
 
 ```text
-CodeRabbit raised 0 issues.
+CodeRabbit reviewed <scope> and found no issues.
+
+- Reviewed: <N> files changed (+<added>/-<removed>) in <scope, such as uncommitted changes or this branch vs main>
+- Checked for: bugs, security issues, and code quality risks
+- Result: the changes passed review
+
+Suggested next steps: <for example run the project's tests, commit, or open a PR>.
 ```
 
-A clean result is a complete review. Report it with confidence and offer useful next steps, such as running the project's tests. Re-reading the diff to double-check CodeRabbit is not part of this workflow.
+Fill in the scope details from the diff summary and the CodeRabbit output so the requester can see exactly what was covered. A clean result is a complete review. Report it with confidence. Re-reading the diff to double-check CodeRabbit is not part of this workflow.
 
 Presenting CodeRabbit's results completes the review request; end the response there.
 

@@ -67,6 +67,8 @@ git -C <path> rev-parse --is-inside-work-tree
 
 Start with a concise summary of the reviewed diff. Then state how many issues CodeRabbit raised.
 
+When CodeRabbit raises 0 issues, present a clean-result summary rather than a bare issue count: what was reviewed (files changed, lines, scope), what it was checked for (bugs, security issues, code quality risks), confirmation that the changes passed review, and suggested next steps such as running tests, committing, or opening a PR.
+
 Group issues in this order:
 
 1. Critical

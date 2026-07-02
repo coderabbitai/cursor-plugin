@@ -82,4 +82,6 @@ Return:
 - Info issues
 - Suggested next fixes
 
+When there are no issues, return a clean-result summary instead: what was reviewed (files changed, lines, scope), what it was checked for (bugs, security issues, code quality risks), confirmation that the changes passed review, and suggested next steps such as running tests, committing, or opening a PR.
+
 Offer to apply fixes when CodeRabbit reports actionable remediation.
