@@ -135,7 +135,7 @@ if (plugin) {
     fail(`.cursor-plugin/plugin.json: description must be "${expectedPluginDescription}"`);
   }
 
-  for (const field of ["logo", "skills", "agents", "commands"]) {
+  for (const field of ["logo", "skills", "agents", "commands", "rules", "hooks"]) {
     const value = plugin[field];
     if (Array.isArray(value)) {
       value.forEach((item) => assertPathExists(`.cursor-plugin/plugin.json ${field}`, item));
@@ -145,8 +145,58 @@ if (plugin) {
   }
 }
 
+const marketplace = readJson(".cursor-plugin/marketplace.json");
+if (marketplace) {
+  if (!marketplace.name) {
+    fail(".cursor-plugin/marketplace.json: missing name");
+  }
+
+  if (!Array.isArray(marketplace.plugins) || marketplace.plugins.length === 0) {
+    fail(".cursor-plugin/marketplace.json: plugins must contain at least one plugin");
+  } else {
+    if (marketplace.owner?.name !== "CodeRabbit") {
+      fail('.cursor-plugin/marketplace.json: owner.name must be "CodeRabbit"');
+    }
+
+    if (marketplace.metadata?.description !== expectedPluginDescription) {
+      fail(`.cursor-plugin/marketplace.json: metadata.description must be "${expectedPluginDescription}"`);
+    }
+
+    for (const entry of marketplace.plugins) {
+      if (!entry.name || !entry.source) {
+        fail(".cursor-plugin/marketplace.json: each plugin entry needs name and source");
+      }
+      if (plugin && entry.name !== plugin.name) {
+        fail(`.cursor-plugin/marketplace.json: plugin entry ${entry.name} does not match ${plugin.name}`);
+      }
+      if (entry.description !== expectedPluginDescription) {
+        fail(`.cursor-plugin/marketplace.json: plugin entry description must be "${expectedPluginDescription}"`);
+      }
+    }
+  }
+}
+
 for (const file of walk("skills").filter((item) => item.endsWith("SKILL.md"))) {
   requireFrontmatterFields(file, ["name", "description"]);
+}
+
+const routingRequirements = [
+  { file: "skills/code-review/SKILL.md", phrases: ["any code review request", "does not mention coderabbit"] },
+  { file: "agents/code-reviewer.md", phrases: ["any code review request", "does not mention coderabbit"] },
+];
+
+for (const { file, phrases } of routingRequirements) {
+  if (!existsSync(path.join(root, file))) {
+    fail(`${file}: file is required for default review routing`);
+    continue;
+  }
+
+  const description = (parseFrontmatter(file).description || "").toLowerCase();
+  for (const phrase of phrases) {
+    if (!description.includes(phrase)) {
+      fail(`${file}: description must keep default review routing phrase "${phrase}"`);
+    }
+  }
 }
 
 for (const file of walk("agents").filter((item) => item.endsWith(".md"))) {
@@ -155,6 +205,36 @@ for (const file of walk("agents").filter((item) => item.endsWith(".md"))) {
 
 for (const file of walk("commands").filter((item) => item.endsWith(".md") || item.endsWith(".txt"))) {
   requireFrontmatterFields(file, ["name", "description"]);
+}
+
+for (const file of walk("rules").filter((item) => item.endsWith(".mdc"))) {
+  requireFrontmatterFields(file, ["description", "alwaysApply"]);
+}
+
+if (existsSync(path.join(root, "hooks/hooks.json"))) {
+  const hooksConfig = readJson("hooks/hooks.json");
+  if (hooksConfig) {
+    if (hooksConfig.version !== 1) {
+      fail("hooks/hooks.json: version must be 1");
+    }
+
+    const hookEntries = Object.values(hooksConfig.hooks ?? {}).flat();
+    if (hookEntries.length === 0) {
+      fail("hooks/hooks.json: hooks must contain at least one entry");
+    }
+
+    for (const entry of hookEntries) {
+      if (!entry.command) {
+        fail("hooks/hooks.json: each hook entry needs a command");
+        continue;
+      }
+
+      const scriptPath = entry.command.split(/\s+/).find((part) => /\.(mjs|cjs|js|sh|py)$/.test(part));
+      if (scriptPath) {
+        assertPathExists("hooks/hooks.json command", scriptPath);
+      }
+    }
+  }
 }
 
 checkNoEmDashes();

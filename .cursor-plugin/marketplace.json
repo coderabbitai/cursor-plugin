@@ -1,0 +1,17 @@
+{
+  "name": "coderabbit",
+  "owner": {
+    "name": "CodeRabbit",
+    "email": "support@coderabbit.ai"
+  },
+  "metadata": {
+    "description": "Run CodeRabbit reviews for code, PR, security, and quality checks, plus guarded autofix for unresolved GitHub PR feedback in Cursor."
+  },
+  "plugins": [
+    {
+      "name": "coderabbit",
+      "source": ".",
+      "description": "Run CodeRabbit reviews for code, PR, security, and quality checks, plus guarded autofix for unresolved GitHub PR feedback in Cursor."
+    }
+  ]
+}

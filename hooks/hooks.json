@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      {
+        "command": "node hooks/post-review-context.mjs",
+        "matcher": "Shell"
+      }
+    ]
+  }
+}
