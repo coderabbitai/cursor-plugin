@@ -3,8 +3,7 @@
   "hooks": {
     "postToolUse": [
       {
-        "command": "node hooks/post-review-context.mjs",
-        "matcher": "Shell"
+        "command": "node hooks/post-review-context.mjs"
       }
     ]
   }
