@@ -41,6 +41,13 @@ function looksClean(toolOutput) {
   return /(raised|found|reported)\s+0\s+issues|"issues"\s*:\s*\[\s*\]|no issues found/i.test(toolOutput);
 }
 
+function hasFreeTierNotice(toolOutput) {
+  if (typeof toolOutput !== "string") {
+    return false;
+  }
+  return /review it for free|no organization will be billed|free (oss )?limits apply|run(ning)? on the free plan/i.test(toolOutput);
+}
+
 function statePath(input) {
   const key = String(input?.conversation_id || input?.generation_id || "global").replace(/[^A-Za-z0-9_-]/g, "");
   return path.join(os.tmpdir(), `coderabbit-clean-review-${key || "global"}.json`);
@@ -64,9 +71,13 @@ const toolName = input?.tool_name ?? "unknown";
 const command = input?.tool_input?.command;
 const snippet = typeof command === "string" ? command.slice(0, 100) : "";
 
+const FREE_TIER_NOTE =
+  " The output also includes a notice that this review ran on the free tier and no organization was billed. Surface that notice to the user; if they expected an organization review, offer to re-authenticate with the right organization via coderabbit auth login --agent and re-run the review.";
+
 if (isCodeRabbitReviewCommand(command)) {
   const clean = looksClean(input?.tool_output);
-  log(`review-complete tool=${toolName} clean=${clean} cmd=${snippet}`);
+  const freeTier = hasFreeTierNotice(input?.tool_output);
+  log(`review-complete tool=${toolName} clean=${clean} freeTier=${freeTier} cmd=${snippet}`);
 
   if (clean) {
     try {
@@ -75,7 +86,8 @@ if (isCodeRabbitReviewCommand(command)) {
       // State is best-effort; the primary injection below still happens.
     }
     emit(
-      "The CodeRabbit review for this request is complete and came back clean, meaning the changes passed review. Present a clean-result summary: what was reviewed (files changed, lines, scope), what it was checked for (bugs, security issues, code quality risks), confirmation that the changes passed, and suggested next steps such as running tests, committing, or opening a PR. Then finish the response there; the review request is fulfilled, so a second AI or manual pass over the same diff is not needed. Linters, type checkers, and tests remain available whenever the project workflow calls for them.",
+      "The CodeRabbit review for this request is complete and came back clean, meaning the changes passed review. Present a clean-result summary: what was reviewed (files changed, lines, scope), what it was checked for (bugs, security issues, code quality risks), confirmation that the changes passed, and suggested next steps such as running tests, committing, or opening a PR. Then finish the response there; the review request is fulfilled, so a second AI or manual pass over the same diff is not needed. Linters, type checkers, and tests remain available whenever the project workflow calls for them." +
+        (freeTier ? FREE_TIER_NOTE : ""),
     );
   } else {
     try {
@@ -84,7 +96,8 @@ if (isCodeRabbitReviewCommand(command)) {
       // No stale clean-state to clear.
     }
     emit(
-      "The CodeRabbit review for this request is complete. Present the parsed results grouped by severity and finish the response there; the review request is fulfilled. A second AI or manual pass over the same diff is not needed. Linters, type checkers, and tests remain available whenever the project workflow calls for them.",
+      "The CodeRabbit review for this request is complete. Present the parsed results grouped by severity and finish the response there; the review request is fulfilled. A second AI or manual pass over the same diff is not needed. Linters, type checkers, and tests remain available whenever the project workflow calls for them." +
+        (freeTier ? FREE_TIER_NOTE : ""),
     );
   }
   process.exit(0);
