@@ -39,10 +39,6 @@ coderabbit auth status --agent
 
 Only continue after `coderabbit auth status --agent` succeeds.
 
-If CodeRabbit mentions that the review is going to run on the free plan, the account may be signed in without the right organization, since organization membership is what unlocks the paid plan. Pause and ask the user whether to re-authenticate with the correct organization via `coderabbit auth login --agent` and re-run, or continue with the free review. Follow the user's choice.
-
-This notice often arrives as a `status` event inside the agent output while the review is already running, for example a message saying the repository will be reviewed for free and no organization will be billed. When that happens, let the review finish, include the notice in the summary, and offer to re-authenticate with the right organization and re-run if the user expected an organization review.
-
 ## Build Review Command
 
 Default to all changes:
@@ -71,7 +67,7 @@ Before using `-c`, confirm each file exists and is relevant to the review.
 
 ## Present Results
 
-Parse CodeRabbit agent output. Ignore routine status events in the user-facing summary, but surface plan and billing notices, such as a status message saying the review runs for free or that no organization will be billed. If the CLI returns an error, report it directly and do not substitute a manual review. If the error is an install or authentication failure, guide the user through fixing the setup step by step, then resume the review once setup succeeds. If the error is a rate limit, share the exact message, stop, and offer to re-run the review once the limit resets.
+Parse CodeRabbit agent output. Ignore status events in the user-facing summary. If the CLI returns an error, report it directly and do not substitute a manual review. If the error is an install or authentication failure, guide the user through fixing the setup step by step, then resume the review once setup succeeds. If the error is a rate limit, share the exact message, stop, and offer to re-run the review once the limit resets.
 
 ## After The Review
 

@@ -19,10 +19,6 @@ If CodeRabbit CLI install or authentication fails, report the exact failure, the
 
 If CodeRabbit reports a rate limit, share the exact message, stop, and offer to re-run the review once the limit resets. Waiting for the limit is part of the workflow; a manual review is not a substitute.
 
-If CodeRabbit mentions that the review is going to run on the free plan, the account may be signed in without the right organization, since organization membership is what unlocks the paid plan. Pause and ask the user whether to re-authenticate with the correct organization via `coderabbit auth login --agent` and re-run, or continue with the free review. Follow the user's choice.
-
-This notice often arrives as a `status` event inside the agent output while the review is already running, for example a message saying the repository will be reviewed for free and no organization will be billed. When that happens, let the review finish, include the notice in the summary, and offer to re-authenticate with the right organization and re-run if the user expected an organization review.
-
 ## Use When
 
 - The user asks to review current changes.

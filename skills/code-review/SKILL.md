@@ -87,15 +87,6 @@ coderabbit auth status --agent
 
 Only continue after authentication succeeds.
 
-If CodeRabbit mentions that the review is going to run on the free plan, the account may be signed in without the right organization, since organization membership is what unlocks the paid plan. Pause and ask the user whether to:
-
-1. Re-authenticate with the correct organization via `coderabbit auth login --agent`, then re-run the review.
-2. Continue with the free review as is.
-
-Follow the user's choice before running or continuing the review.
-
-This notice often arrives as a `status` event inside the agent output while the review is already running, for example: `"This looks like a public open-source repository. CodeRabbit will review it for free, and no organization will be billed. Free OSS limits apply."` When that happens, let the review finish, include the notice in the summary, and offer to re-authenticate with the right organization and re-run if the user expected an organization review.
-
 ## Run Review
 
 Default review:
@@ -130,7 +121,7 @@ If `AGENTS.md`, `cursor.md`, or `.coderabbit.yaml` exists in the repository root
 
 - Parse agent-readable CodeRabbit output.
 - Collect issues and group them by severity.
-- Ignore routine status events in the user-facing summary, but surface plan and billing notices, such as a status message saying the review runs for free or that no organization will be billed.
+- Ignore status events in the user-facing summary.
 - If an error event or CLI failure occurs, report the exact failure and next step.
 - If the review fails, help the user fix the CodeRabbit setup rather than substituting a manual review.
 - If CodeRabbit reports a rate limit, share the exact message and stop. Offer to re-run the review once the limit resets, including any reset time the message provides. A manual review is not a substitute while waiting.
