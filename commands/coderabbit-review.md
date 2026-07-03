@@ -41,10 +41,10 @@ Only continue after `coderabbit auth status --agent` succeeds.
 
 ## Build Review Command
 
-Default to all changes:
+Default review:
 
 ```bash
-coderabbit review --agent -t all
+coderabbit review --agent
 ```
 
 Map user arguments:

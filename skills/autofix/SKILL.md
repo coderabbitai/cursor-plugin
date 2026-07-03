@@ -2,7 +2,7 @@
 name: autofix
 description: Safely review and apply unresolved CodeRabbit GitHub PR review-thread feedback in Cursor with per-fix approval.
 metadata:
-  version: "0.2.1"
+  version: "0.1.1"
   description: "Safely apply unresolved CodeRabbit GitHub PR review-thread feedback in Cursor with per-fix approval."
   triggers:
     - coderabbit autofix
@@ -189,7 +189,7 @@ Map severity:
 
 - Critical or High means critical.
 - Medium means warning.
-- Minor or Low means warning.
+- Minor or Low means info.
 - Info or Suggestion means info.
 - Security issues should be treated as high priority.
 

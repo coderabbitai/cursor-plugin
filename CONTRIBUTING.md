@@ -21,7 +21,7 @@ No package install is required for the validator.
 
 ## Release Checklist
 
-1. Update `.cursor-plugin/plugin.json` version.
+1. Update the version in `.cursor-plugin/plugin.json`, `package.json`, `package-lock.json`, and the `metadata.version` of each skill so they stay in sync.
 2. Run `npm test`.
 3. Test local install from `~/.cursor/plugins/local/coderabbit`.
 4. Confirm README install and usage steps.

@@ -8,6 +8,9 @@ const REMINDER_MAX = 6;
 const LOG_PATH = path.join(os.tmpdir(), "coderabbit-plugin-hook.log");
 
 function log(message) {
+  if (process.env.CODERABBIT_HOOK_DEBUG !== "1") {
+    return;
+  }
   try {
     appendFileSync(LOG_PATH, `${new Date().toISOString()} ${message}\n`);
   } catch {

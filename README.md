@@ -15,6 +15,7 @@ This repository packages CodeRabbit for Cursor users with:
 
 - Cursor with plugin support
 - Git
+- Node.js 18 or newer, used by the bundled post-review hook
 - CodeRabbit CLI, installed automatically by the agent when missing
 - GitHub CLI for PR-thread autofix workflows
 
@@ -163,7 +164,9 @@ The validator checks:
 - Manifest component paths
 - Plugin metadata
 - Marketplace metadata
-- Required frontmatter for skills, agents, and commands
+- Required frontmatter for skills, agents, commands, and rules
+- Hook configuration and referenced hook scripts
+- Default review routing phrases in the skill and agent descriptions
 - Accidental em dashes in repository text files
 
 ## Publishing
