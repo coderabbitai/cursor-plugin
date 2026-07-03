@@ -39,6 +39,8 @@ coderabbit auth status --agent
 
 Only continue after `coderabbit auth status --agent` succeeds.
 
+If CodeRabbit mentions that the review is going to run on the free plan, the account may be signed in without the right organization, since organization membership is what unlocks the paid plan. Pause and ask the user whether to re-authenticate with the correct organization via `coderabbit auth login --agent` and re-run, or continue with the free review. Follow the user's choice.
+
 ## Build Review Command
 
 Default to all changes:

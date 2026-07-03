@@ -1,7 +1,7 @@
 {
   "name": "coderabbit",
   "displayName": "CodeRabbit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Run CodeRabbit reviews for code, PR, security, and quality checks, plus guarded autofix for unresolved GitHub PR feedback in Cursor.",
   "author": {
     "name": "CodeRabbit",
