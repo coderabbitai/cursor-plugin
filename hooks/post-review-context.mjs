@@ -35,9 +35,8 @@ function isCodeRabbitReviewCommand(command) {
   if (typeof command !== "string") {
     return false;
   }
-
   const argv = tokenizeSimpleCommand(command);
-  if (!argv) {
+  if (!argv || argv.length === 0) {
     return false;
   }
 
