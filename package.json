@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "node scripts/validate-plugin.mjs",
+    "test": "node scripts/test-post-review-context.mjs && node scripts/validate-plugin.mjs",
     "validate": "node scripts/validate-plugin.mjs"
   },
   "engines": {
