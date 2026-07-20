@@ -1,7 +1,7 @@
 ---
 name: coderabbit-review
 description: Run CodeRabbit code review on a repository.
-argument-hint: "[all|committed|uncommitted] [--base <branch>] [--base-commit <sha>] [--dir <path>] [--light]"
+argument-hint: "[all|committed|uncommitted] [--base <branch>] [--base-commit <sha>] [--dir <path>]"
 ---
 
 # CodeRabbit Review
@@ -19,7 +19,7 @@ coderabbit --version
 
 If Git is unavailable or the resolved target is not a Git repository, tell the user that CodeRabbit review needs a Git repository.
 
-Require CodeRabbit CLI 0.6.5 or newer. The terminal `review_completed` and `review_skipped` contract in this workflow depends on that version. If CodeRabbit CLI is missing or older, explain that the official installer writes a binary to user-global storage and may update shell profiles. Ask for explicit approval before installing or upgrading it.
+If CodeRabbit CLI is missing, explain that the official installer writes a binary to user-global storage and may update shell profiles. Ask for explicit approval before installing it.
 
 On native Windows, stop before proposing the POSIX installer and direct the user to open the repository in WSL. After approval in macOS, Linux, or WSL, run:
 
@@ -49,7 +49,6 @@ Map user arguments:
 - `--base <branch>` passes the base branch.
 - `--base-commit <sha>` passes the base commit.
 - `--dir <path>` passes a review directory after verifying it is a Git repository.
-- `--light` passes the faster light-review mode.
 - Existing instruction files such as `AGENTS.md`, `cursor.md`, or `.coderabbit.yaml` can be passed with `-c <file>` after confirming `coderabbit review --help` supports `-c`.
 
 Before using `--dir`, run:
@@ -65,9 +64,11 @@ Before using `-c`, confirm each file exists and is relevant to the review.
 Parse CodeRabbit's newline-delimited agent output and require a terminal event before declaring an outcome:
 
 - `type: complete` with `status: review_completed` means a review completed. Use its `findings` and `reviewedFiles` values when present.
-- `status: review_skipped` means no review was performed. Report the reason and do not call the result clean.
+- `type: complete` with `status: review_skipped` means no review was performed. Report the reason and do not call the result clean.
 - An error event or nonzero CLI exit means the review failed. Report it directly and do not substitute a manual review.
 - Ignore routine progress and heartbeat events in the final summary, but surface nonempty status messages that require user action, including access, billing, authentication, or rate-limit messages.
+
+If the process exits without a terminal `type: complete` event, report the result as incomplete or unsupported, never successful.
 
 If the error is an install or authentication failure, guide the user through the exact setup failure, then resume the review once setup succeeds. If the error is a rate limit, share the exact message, stop, and offer to re-run the review once the limit resets.
 

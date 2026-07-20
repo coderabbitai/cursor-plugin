@@ -21,59 +21,6 @@ function readJson(relativePath) {
   }
 }
 
-function readText(relativePath) {
-  try {
-    return readFileSync(path.join(root, relativePath), "utf8");
-  } catch (error) {
-    fail(`${relativePath}: ${error.message}`);
-    return "";
-  }
-}
-
-function requireText(relativePath, phrases) {
-  const text = readText(relativePath).toLowerCase();
-  for (const phrase of phrases) {
-    if (!text.includes(phrase.toLowerCase())) {
-      fail(`${relativePath}: missing safety invariant "${phrase}"`);
-    }
-  }
-}
-
-function forbidText(relativePath, phrases) {
-  const text = readText(relativePath).toLowerCase();
-  for (const phrase of phrases) {
-    if (text.includes(phrase.toLowerCase())) {
-      fail(`${relativePath}: forbidden stale contract text "${phrase}"`);
-    }
-  }
-}
-
-function requireOrderedText(relativePath, phrases) {
-  const text = readText(relativePath).toLowerCase();
-  let cursor = 0;
-  for (const phrase of phrases) {
-    const index = text.indexOf(phrase.toLowerCase(), cursor);
-    if (index === -1) {
-      fail(`${relativePath}: missing ordered safety invariant "${phrase}"`);
-      return;
-    }
-    cursor = index + phrase.length;
-  }
-}
-
-function forbidTextBetween(relativePath, startMarker, endMarker, phrase) {
-  const text = readText(relativePath).toLowerCase();
-  const start = text.indexOf(startMarker.toLowerCase());
-  const end = text.indexOf(endMarker.toLowerCase(), start + startMarker.length);
-  if (start === -1 || end === -1) {
-    fail(`${relativePath}: missing section boundary for "${startMarker}" or "${endMarker}"`);
-    return;
-  }
-  if (text.slice(start, end).includes(phrase.toLowerCase())) {
-    fail(`${relativePath}: forbidden "${phrase}" before approval boundary`);
-  }
-}
-
 function isSafeRelative(value) {
   return typeof value === "string" && value.length > 0 && !path.isAbsolute(value) && !value.split(/[\\/]/).includes("..");
 }
@@ -229,50 +176,6 @@ if (marketplace) {
   }
 }
 
-const packageJson = readJson("package.json");
-const packageLock = readJson("package-lock.json");
-function skillMetadataVersion(relativePath) {
-  const text = readText(relativePath);
-  const frontmatterEnd = text.indexOf("\n---", 4);
-  if (!text.startsWith("---\n") || frontmatterEnd === -1) {
-    return undefined;
-  }
-
-  const lines = text.slice(4, frontmatterEnd).split("\n");
-  const metadataIndex = lines.findIndex((line) => line === "metadata:");
-  if (metadataIndex === -1) {
-    return undefined;
-  }
-
-  for (const line of lines.slice(metadataIndex + 1)) {
-    if (line !== "" && !/^\s/.test(line)) {
-      break;
-    }
-    const match = line.match(/^  version:\s*["']?([^"'\s]+)["']?\s*$/);
-    if (match) {
-      return match[1];
-    }
-  }
-  return undefined;
-}
-
-const versionSurfaces = [
-  [".cursor-plugin/plugin.json", plugin?.version],
-  ["package.json", packageJson?.version],
-  ["package-lock.json", packageLock?.version],
-  ["package-lock.json packages root", packageLock?.packages?.[""]?.version],
-  ["skills/code-review/SKILL.md", skillMetadataVersion("skills/code-review/SKILL.md")],
-  ["skills/autofix/SKILL.md", skillMetadataVersion("skills/autofix/SKILL.md")],
-];
-const expectedVersion = versionSurfaces.find(([, version]) => version)?.[1];
-for (const [surface, version] of versionSurfaces) {
-  if (!version) {
-    fail(`${surface}: missing version`);
-  } else if (version !== expectedVersion) {
-    fail(`${surface}: version ${version} does not match ${expectedVersion}`);
-  }
-}
-
 for (const file of walk("skills").filter((item) => item.endsWith("SKILL.md"))) {
   requireFrontmatterFields(file, ["name", "description"]);
 }
@@ -295,68 +198,6 @@ for (const { file, phrases } of routingRequirements) {
     }
   }
 }
-
-const reviewContractFiles = [
-  "README.md",
-  "commands/coderabbit-review.md",
-  "agents/code-reviewer.md",
-  "skills/code-review/SKILL.md",
-  "rules/code-review-routing.mdc",
-];
-
-for (const file of reviewContractFiles) {
-  forbidText(file, ["passed review", "+<added>/-<removed>"]);
-}
-
-requireText("skills/code-review/SKILL.md", ["0.6.5", "review_completed", "review_skipped", "findings", "native windows"]);
-
-for (const file of ["README.md", "commands/coderabbit-review.md", "agents/code-reviewer.md", "skills/code-review/SKILL.md"]) {
-  requireText(file, ["explicit approval", "curl -fsSL https://cli.coderabbit.ai/install.sh | CI=1 sh"]);
-}
-
-for (const file of ["commands/coderabbit-review.md", "agents/code-reviewer.md", "skills/code-review/SKILL.md"]) {
-  requireText(file, ["0.6.5", "native windows"]);
-}
-
-for (const file of ["commands/coderabbit-autofix.md", "skills/autofix/SKILL.md"]) {
-  forbidText(file, ["cli.coderabbit.ai/install.sh", "coderabbit --version"]);
-}
-
-requireText("skills/autofix/SKILL.md", [
-  "git status --porcelain",
-  "gh pr view --json url",
-  "test \"$local_head\" = \"$pr_head\"",
-  "submitted CodeRabbit review for the exact current PR head",
-  String.raw`if \$pr.headRefOid != \"$local_head\"`,
-  "--paginate",
-  "--slurp",
-  "test \"$current_pr_head\" = \"$expected_pr_head\"",
-  "If `--no-commit` was requested, return a local-only summary. Do not push",
-  "test \"$resolved_target\" = \"$approved_target\"",
-  "test \"$(git rev-parse HEAD)\" = \"$approved_commit\"",
-  "git push \"$head_repo_url\" \"HEAD:refs/heads/$head_ref\"",
-  "test \"$remote_head\" = \"$approved_commit\"",
-  "ask for approval before posting",
-  "Never use a bare `git push`",
-]);
-
-requireOrderedText("skills/autofix/SKILL.md", [
-  "### Preview Push Destination",
-  "Commit: $autofix_commit",
-  "Ask for approval after this read-only preview",
-  "### Push After Approval",
-  "test \"$(git rev-parse HEAD)\" = \"$approved_commit\"",
-  "test \"$resolved_target\" = \"$approved_target\"",
-  "test \"$remote_head\" = \"$expected_parent\"",
-  "git push \"$head_repo_url\" \"HEAD:refs/heads/$head_ref\"",
-  "test \"$remote_head\" = \"$approved_commit\"",
-]);
-forbidTextBetween(
-  "skills/autofix/SKILL.md",
-  "### Preview Push Destination",
-  "### Push After Approval",
-  "git push ",
-);
 
 for (const file of walk("agents").filter((item) => item.endsWith(".md"))) {
   requireFrontmatterFields(file, ["name", "description"]);

@@ -1,6 +1,6 @@
 {
   "name": "@coderabbitai/cursor-plugin",
-  "version": "0.1.2",
+  "version": "0.1.1",
   "private": true,
   "description": "Run CodeRabbit reviews and guarded GitHub PR feedback autofix workflows in Cursor.",
   "license": "MIT",

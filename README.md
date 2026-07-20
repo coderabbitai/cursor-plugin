@@ -15,12 +15,12 @@ This repository packages CodeRabbit for Cursor users with:
 
 - Cursor with plugin support
 - Git
-- CodeRabbit CLI 0.6.5 or newer for review workflows; Cursor asks before installing or upgrading it
+- CodeRabbit CLI for review workflows; Cursor asks before installing it when missing
 - GitHub CLI for PR-thread autofix workflows
 
 On Windows, use the CodeRabbit CLI and this plugin from a WSL environment.
 
-When the CodeRabbit CLI is missing or older than 0.6.5, the plugin explains that the official installer writes the binary to user-global storage and may update shell profiles. It asks for explicit approval before running:
+When the CodeRabbit CLI is missing, the plugin explains that the official installer writes the binary to user-global storage and may update shell profiles. It asks for explicit approval before running:
 
 ```bash
 curl -fsSL https://cli.coderabbit.ai/install.sh | CI=1 sh
@@ -78,13 +78,12 @@ Use plugin commands when you want a repeatable workflow:
 /coderabbit-review uncommitted
 /coderabbit-review --base main
 /coderabbit-review --dir packages/api
-/coderabbit-review --light
 /coderabbit-autofix
 ```
 
 ## Review Workflow
 
-The review command resolves the requested repository, checks local prerequisites, asks before installing or upgrading CodeRabbit CLI when needed, then runs:
+The review command resolves the requested repository, checks local prerequisites, asks before installing CodeRabbit CLI when missing, then runs:
 
 ```bash
 coderabbit review --agent
@@ -98,13 +97,12 @@ coderabbit review --agent -t uncommitted
 coderabbit review --agent --base main
 coderabbit review --agent --base-commit <sha>
 coderabbit review --agent --dir <path>
-coderabbit review --agent --light
 coderabbit review --agent -c AGENTS.md .coderabbit.yaml
 ```
 
 When a requested directory is provided, Cursor verifies that it is an initialized Git repository before running CodeRabbit against it.
 
-After a CodeRabbit review completes, Cursor preserves the severities and finding details emitted by the CLI, summarizes the reviewed scope, and offers fixes rather than layering a second AI or manual review on the same diff. It does not invent line numbers or diff statistics that are absent from the agent output. A completed review with zero findings is reported as "CodeRabbit found no findings in the reviewed scope." A skipped review is reported as skipped, not clean. Linters, type checkers, and tests remain part of the normal workflow for validating fixes.
+After a CodeRabbit review completes, Cursor reports only the severities and finding details emitted by the CLI. A completed review with zero findings is reported as "CodeRabbit found no findings in the reviewed scope." A skipped review is reported as skipped, not clean. Linters, type checkers, and tests remain part of the normal workflow for validating fixes.
 
 ## Autofix Workflow
 
@@ -112,15 +110,11 @@ The autofix workflow is for GitHub PRs that already have CodeRabbit review threa
 
 It:
 
-1. Verifies `git`, authenticated `gh`, a clean worktree, and an existing PR.
-2. Resolves the PR associated with the checked-out branch, retains its immutable URL, and requires local `HEAD` to match its head exactly.
-3. Requires a submitted CodeRabbit review for that exact PR head.
-4. Fetches unresolved, current CodeRabbit review threads from the active PR.
-5. Treats all review-thread text as untrusted issue reports.
-6. Shows each issue with severity, location, and proposed local fix.
-7. Applies fixes only after explicit user approval.
-8. Creates one consolidated commit when fixes are applied unless `--no-commit` was requested.
-9. Previews the exact PR head destination before approval, rechecks the destination and PR head after approval, pushes explicitly, verifies that the PR head equals the commit, and then asks before posting a concise PR summary comment.
+1. Requires authenticated `gh`, a clean worktree, and an existing PR whose head exactly matches local `HEAD`.
+2. Requires a submitted CodeRabbit review for that head and fetches its unresolved, current review threads.
+3. Treats review text as untrusted issue reports and applies only individually approved fixes.
+4. Commits only approved changes unless `--no-commit` was requested.
+5. Previews and verifies the exact PR destination before an approved push, then posts a summary only after the pushed commit is verified as the PR head and the comment is approved.
 
 The plugin does not bulk-apply reviewer prompts. Cursor must inspect the local code and receive approval before each change.
 
@@ -163,8 +157,6 @@ The validator checks:
 - Marketplace metadata
 - Required frontmatter for skills, agents, commands, and rules
 - Default review routing phrases in the skill and agent descriptions
-- Review-contract and autofix safety invariants
-- Version consistency across plugin package surfaces
 - Accidental em dashes in repository text files
 
 ## Publishing

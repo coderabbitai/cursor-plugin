@@ -31,15 +31,15 @@ If CodeRabbit reports a rate limit, share the exact message, stop, and offer to 
 
 1. Resolve the review target from `--dir` when provided, otherwise use the current directory.
 2. Confirm the resolved target is inside a Git repository.
-3. Check `coderabbit --version` and require CodeRabbit CLI 0.6.5 or newer.
-4. If CodeRabbit CLI is missing or older, explain the user-global installer changes and ask for explicit approval before installing or upgrading it. On native Windows, stop and direct the user to open the repository in WSL instead of running the POSIX installer.
+3. Check `coderabbit --version`.
+4. If CodeRabbit CLI is missing, explain the user-global installer changes and ask for explicit approval before installing it. On native Windows, stop and direct the user to open the repository in WSL instead of running the POSIX installer.
 5. Run `coderabbit review --agent` with the requested scope flags and let that command own authentication.
 6. Parse the output into findings ordered by the native severity emitted by CodeRabbit.
 7. Explain only the finding details that are present in the agent output.
 8. If the user wants fixes, inspect local code and apply the smallest safe change.
-9. Re-run CodeRabbit when fixes are complete and the user asked for a fix-review loop, with at most two re-runs after the initial review.
+9. Re-run CodeRabbit when fixes are complete and the user asked for a fix-review loop.
 
-After the user explicitly approves installation or upgrade in macOS, Linux, or WSL, run:
+After the user explicitly approves installation in macOS, Linux, or WSL, run:
 
 ```bash
 curl -fsSL https://cli.coderabbit.ai/install.sh | CI=1 sh
@@ -55,7 +55,6 @@ coderabbit --version
 - `--base <branch>` compares against a branch.
 - `--base-commit <sha>` compares against a commit.
 - `--dir <path>` reviews a specific Git repository directory.
-- `--light` uses the faster light-review mode.
 
 Verify any `--dir` path with:
 
@@ -65,7 +64,7 @@ git -C <path> rev-parse --is-inside-work-tree
 
 ## Output
 
-Require a terminal agent event before declaring an outcome. Treat `review_completed` as completed, `review_skipped` as no review performed, and an error event or nonzero exit as failed. Ignore routine progress and heartbeat events in the final summary, but surface actionable status messages.
+Require a terminal `type: complete` agent event before declaring an outcome. Treat its `review_completed` status as completed and its `review_skipped` status as no review performed. Treat an error event, nonzero exit, or exit without a terminal complete event as failed or incomplete, never successful. Ignore routine progress and heartbeat events in the final summary, but surface actionable status messages.
 
 For a completed review, start with the reviewed scope and reviewed-file count when emitted. Then state how many findings CodeRabbit reported.
 
