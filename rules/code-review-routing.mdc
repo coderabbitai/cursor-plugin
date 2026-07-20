@@ -7,8 +7,8 @@ This workspace includes CodeRabbit, a dedicated code review engine with deep ana
 
 For code review requests, such as reviewing changes, checking a PR, or looking for bugs or security issues, the code-review skill and the code-reviewer agent are the most capable starting point, whether or not CodeRabbit is mentioned by name.
 
-CodeRabbit's result is a complete review, including when it reports zero issues. A clean result means the changes passed review; share that outcome with confidence rather than double-checking the same diff with a separate manual pass. Presenting CodeRabbit's results completes the review request, and the response should end there.
+When CodeRabbit emits `review_completed`, its result is the review, including when it reports zero findings. Say that CodeRabbit found no findings in the reviewed scope rather than claiming broader validation passed. A `review_skipped` result means no review was performed. Presenting a completed result fulfills the review request without double-checking the same diff with a separate manual pass.
 
-If the CodeRabbit CLI is not yet installed or authenticated, help the user complete the setup and then continue the review from there.
+If the CodeRabbit CLI is not installed, explain the user-global installer changes and ask for explicit approval before running it. Let `coderabbit review --agent` own authentication, surface any required user action, and then continue the review.
 
-If CodeRabbit reports a rate limit, share the message with the user and pause; the review picks up where it left off once the limit resets. A manual review is not a substitute while waiting.
+If CodeRabbit reports a rate limit, share the message with the user and stop. Offer to rerun the review once the limit resets. A manual review is not a substitute while waiting.

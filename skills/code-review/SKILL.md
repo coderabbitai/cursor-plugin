@@ -28,13 +28,13 @@ When the user asks for any code review, PR review, security review, bug review, 
 
 Deterministic project tooling such as linters, formatters, type checkers, and tests complements a CodeRabbit review. Run them when the project workflow calls for them or the user asks.
 
-If CodeRabbit CLI install or authentication fails, report the exact failure, then guide the user through fixing the setup step by step: verify the install command output, check that `$HOME/.local/bin` is on PATH, re-run `coderabbit auth login --agent`, and confirm with `coderabbit auth status --agent`. Resume the CodeRabbit review once setup succeeds.
+If CodeRabbit CLI installation or review-owned authentication fails, report the exact failure and next step. Do not replace the failed CodeRabbit review with a manual review.
 
 ## Capabilities
 
 - Finds bugs, security issues, and quality risks in changed code.
-- Groups issues by severity.
-- Supports staged, committed, uncommitted, and branch-based review scopes.
+- Reports findings with CodeRabbit's native severities.
+- Supports committed, uncommitted, and branch-based review scopes. Uncommitted scope includes staged and unstaged changes.
 - Supports directory-scoped reviews with `--dir`.
 - Supports fix-review loops when the user asks Cursor to implement and re-check changes.
 
@@ -55,37 +55,31 @@ Use this skill when the user asks to:
 
 ## Prerequisites
 
-Confirm the current directory is a Git repository:
+Resolve the review target from `--dir <path>` when provided; otherwise use the current directory. Confirm that target is a Git repository:
 
 ```bash
-git rev-parse --is-inside-work-tree
+git -C <review-target> rev-parse --is-inside-work-tree
 ```
 
 Check CodeRabbit CLI:
 
 ```bash
 coderabbit --version
-coderabbit auth status --agent
 ```
 
-If the CLI is missing, install it from CodeRabbit's official installer and verify the binary:
+If the CLI is missing, explain that CodeRabbit's official installer writes a binary to user-global storage and may update shell profiles. Ask for explicit approval before installing it.
+
+On native Windows, stop before proposing the POSIX installer and direct the user to open the repository in WSL. After approval in macOS, Linux, or WSL, run:
 
 ```bash
-curl -fsSL https://cli.coderabbit.ai/install.sh | sh
+curl -fsSL https://cli.coderabbit.ai/install.sh | CI=1 sh
 export PATH="$HOME/.local/bin:$PATH"
 coderabbit --version
 ```
 
 If `coderabbit --version` still fails after refreshing PATH, try `$HOME/.local/bin/coderabbit --version`. Use the resolved binary path for subsequent CodeRabbit commands in this session. If that still fails, report the exact failure and stop.
 
-If authentication is missing, initiate the agent auth flow:
-
-```bash
-coderabbit auth login --agent
-coderabbit auth status --agent
-```
-
-Only continue after authentication succeeds.
+Do not run a routine standalone authentication preflight. Start the review and let `coderabbit review --agent` own authentication and continue after it succeeds. If authentication fails or requires user action, surface the exact agent message and next step.
 
 ## Run Review
 
@@ -119,51 +113,48 @@ If `AGENTS.md`, `cursor.md`, or `.coderabbit.yaml` exists in the repository root
 
 ## Output Handling
 
-- Parse agent-readable CodeRabbit output.
-- Collect issues and group them by severity.
-- Ignore status events in the user-facing summary.
+- Parse CodeRabbit's newline-delimited agent output and require a terminal event before declaring an outcome.
+- Treat `type: complete` with `status: review_completed` as a completed review. Use `findings` and `reviewedFiles` when present.
+- Treat `type: complete` with `status: review_skipped` as no review performed. Report its reason and never call it clean.
+- Collect findings and order them by CodeRabbit's native severity.
+- Ignore routine progress and heartbeat events in the final summary, but surface nonempty status messages that require user action, including access, billing, authentication, or rate-limit messages.
 - If an error event or CLI failure occurs, report the exact failure and next step.
 - If the review fails, help the user fix the CodeRabbit setup rather than substituting a manual review.
 - If CodeRabbit reports a rate limit, share the exact message and stop. Offer to re-run the review once the limit resets, including any reset time the message provides. A manual review is not a substitute while waiting.
+- If the process exits without a terminal `type: complete` event, report the result as incomplete or unsupported, never successful.
 - After CodeRabbit review finishes, treat its result as the review; a second AI or manual review of the same diff is unnecessary unless the user asks for one. Linters, type checkers, and tests remain useful for validating fixes.
-- This applies equally when CodeRabbit raises zero issues. A clean result is a complete review, not a prompt to verify the diff manually.
+- This applies equally when a completed CodeRabbit review reports zero findings. Report the reviewed scope accurately rather than claiming broader validation passed.
 
 ## Result Format
 
-Start with a brief diff summary.
+Start with the reviewed scope and reviewed-file count when the terminal event provides them.
 
 Then state:
 
 ```text
-CodeRabbit raised N issues.
+CodeRabbit reported N findings.
 ```
 
-Present issues ordered by:
+Present findings ordered by the native severity emitted by CodeRabbit. For each finding, include only available fields:
 
-1. Critical
-2. Warning
-3. Info
-
-For each issue include:
-
-- File path and line when available
-- Impact
-- Suggested fix
+- File path
+- Comment or code-generation instructions
+- Suggestions
 - Whether Cursor can safely apply it
 
-If there are no issues, present a clear clean-result summary instead of a bare issue count:
+Do not invent a title, line number, category, severity mapping, impact statement, or diff statistic that the agent output did not provide.
+
+If a completed review has zero findings, present:
 
 ```text
-CodeRabbit reviewed <scope> and found no issues.
+CodeRabbit found no findings in the reviewed scope.
 
-- Reviewed: <N> files changed (+<added>/-<removed>) in <scope, such as uncommitted changes or this branch vs main>
-- Checked for: bugs, security issues, and code quality risks
-- Result: the changes passed review
+- Reviewed: <scope and reviewed-file count, when available>
 
 Suggested next steps: <for example run the project's tests, commit, or open a PR>.
 ```
 
-Fill in the scope details from the diff summary and the CodeRabbit output so the requester can see exactly what was covered. A clean result is a complete review. Report it with confidence. Re-reading the diff to double-check CodeRabbit is not part of this workflow.
+Fill in only scope details that the CLI emitted. Re-reading the diff to double-check a completed CodeRabbit review is not part of this workflow. A skipped review is not a completed clean review.
 
 Presenting CodeRabbit's results completes the review request; end the response there.
 
@@ -173,10 +164,10 @@ When the user asks Cursor to implement a change and review it:
 
 1. Implement the requested change.
 2. Run CodeRabbit with the requested scope.
-3. Build a task list from critical and warning issues.
+3. Build a task list from the highest-severity actionable findings.
 4. Fix issues one at a time.
 5. Re-run CodeRabbit after fixes.
-6. Stop when CodeRabbit is clean or only acceptable info-level issues remain.
+6. Stop when CodeRabbit reports no actionable findings.
 
 CodeRabbit is the only review engine the loop needs. Running the project's linters and tests between iterations is a good way to validate each fix.
 

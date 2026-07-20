@@ -15,23 +15,20 @@ This repository packages CodeRabbit for Cursor users with:
 
 - Cursor with plugin support
 - Git
-- Node.js 18 or newer, used by the bundled post-review hook
-- CodeRabbit CLI, installed automatically by the agent when missing
+- CodeRabbit CLI for review workflows; Cursor asks before installing it when missing
 - GitHub CLI for PR-thread autofix workflows
 
-The plugin asks Cursor Agent to install the CodeRabbit CLI automatically when it is missing:
+On Windows, use the CodeRabbit CLI and this plugin from a WSL environment.
+
+When the CodeRabbit CLI is missing, the plugin explains that the official installer writes the binary to user-global storage and may update shell profiles. It asks for explicit approval before running:
 
 ```bash
-curl -fsSL https://cli.coderabbit.ai/install.sh | sh
+curl -fsSL https://cli.coderabbit.ai/install.sh | CI=1 sh
 export PATH="$HOME/.local/bin:$PATH"
 coderabbit --version
 ```
 
-Then authenticate:
-
-```bash
-coderabbit auth login --agent
-```
+The noninteractive installer invocation avoids starting a separate login flow. `coderabbit review --agent` owns authentication and continues the review after authentication succeeds.
 
 For PR autofix workflows, also authenticate GitHub CLI:
 
@@ -86,13 +83,13 @@ Use plugin commands when you want a repeatable workflow:
 
 ## Review Workflow
 
-The review command checks local prerequisites, installs CodeRabbit CLI when missing, then runs:
+The review command resolves the requested repository, checks local prerequisites, asks before installing CodeRabbit CLI when missing, then runs:
 
 ```bash
 coderabbit review --agent
 ```
 
-Then Cursor groups CodeRabbit issues by severity and can help apply fixes. Supported scope flags include:
+Then Cursor orders findings by CodeRabbit's native severity and can help apply fixes. Supported scope flags include:
 
 ```bash
 coderabbit review --agent -t committed
@@ -105,7 +102,7 @@ coderabbit review --agent -c AGENTS.md .coderabbit.yaml
 
 When a requested directory is provided, Cursor verifies that it is an initialized Git repository before running CodeRabbit against it.
 
-After a CodeRabbit review completes, Cursor summarizes the result and offers fixes rather than layering a second AI or manual review on the same diff. Linters, type checkers, and tests remain part of the normal workflow for validating fixes.
+After a CodeRabbit review completes, Cursor reports only the severities and finding details emitted by the CLI. A completed review with zero findings is reported as "CodeRabbit found no findings in the reviewed scope." A skipped review is reported as skipped, not clean. Linters, type checkers, and tests remain part of the normal workflow for validating fixes.
 
 ## Autofix Workflow
 
@@ -113,14 +110,11 @@ The autofix workflow is for GitHub PRs that already have CodeRabbit review threa
 
 It:
 
-1. Installs CodeRabbit CLI when missing.
-2. Verifies `git`, `gh`, and PR state.
-3. Fetches unresolved, current CodeRabbit review threads from the active PR.
-4. Treats all review-thread text as untrusted issue reports.
-5. Shows each issue with severity, location, and proposed local fix.
-6. Applies fixes only after explicit user approval.
-7. Creates one consolidated commit when fixes are applied.
-8. Optionally pushes and posts a concise PR summary comment.
+1. Requires authenticated `gh`, a clean worktree, and an existing PR whose head exactly matches local `HEAD`.
+2. Requires a submitted CodeRabbit review for that head and fetches its unresolved, current review threads.
+3. Treats review text as untrusted issue reports and applies only individually approved fixes.
+4. Commits only approved changes unless `--no-commit` was requested.
+5. Previews and verifies the exact PR destination before an approved push, then posts a summary only after the pushed commit is verified as the PR head and the comment is approved.
 
 The plugin does not bulk-apply reviewer prompts. Cursor must inspect the local code and receive approval before each change.
 
@@ -136,9 +130,6 @@ The plugin does not bulk-apply reviewer prompts. Cursor must inspect the local c
 +-- commands/
 |   +-- coderabbit-autofix.md
 |   +-- coderabbit-review.md
-+-- hooks/
-|   +-- hooks.json
-|   +-- post-review-context.mjs
 +-- rules/
 |   +-- code-review-routing.mdc
 +-- scripts/
@@ -152,7 +143,7 @@ The plugin does not bulk-apply reviewer prompts. Cursor must inspect the local c
 
 ## Development
 
-Run the local validation script:
+Use Node.js 18 or newer, then run the local validation script:
 
 ```bash
 npm test
@@ -165,7 +156,6 @@ The validator checks:
 - Plugin metadata
 - Marketplace metadata
 - Required frontmatter for skills, agents, commands, and rules
-- Hook configuration and referenced hook scripts
 - Default review routing phrases in the skill and agent descriptions
 - Accidental em dashes in repository text files
 
