@@ -1,0 +1,1 @@
+Disposable production smoke fixture for PR 31575. Do not merge.
