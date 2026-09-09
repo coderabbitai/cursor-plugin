@@ -135,7 +135,7 @@ if (plugin) {
     fail(`.cursor-plugin/plugin.json: description must be "${expectedPluginDescription}"`);
   }
 
-  for (const field of ["logo", "skills", "agents", "commands", "rules"]) {
+  for (const field of ["logo", "skills", "agents", "commands", "rules", "hooks"]) {
     const value = plugin[field];
     if (Array.isArray(value)) {
       value.forEach((item) => assertPathExists(`.cursor-plugin/plugin.json ${field}`, item));
@@ -180,6 +180,25 @@ for (const file of walk("skills").filter((item) => item.endsWith("SKILL.md"))) {
   requireFrontmatterFields(file, ["name", "description"]);
 }
 
+const routingRequirements = [
+  { file: "skills/code-review/SKILL.md", phrases: ["any code review request", "does not mention coderabbit"] },
+  { file: "agents/code-reviewer.md", phrases: ["any code review request", "does not mention coderabbit"] },
+];
+
+for (const { file, phrases } of routingRequirements) {
+  if (!existsSync(path.join(root, file))) {
+    fail(`${file}: file is required for default review routing`);
+    continue;
+  }
+
+  const description = (parseFrontmatter(file).description || "").toLowerCase();
+  for (const phrase of phrases) {
+    if (!description.includes(phrase)) {
+      fail(`${file}: description must keep default review routing phrase "${phrase}"`);
+    }
+  }
+}
+
 for (const file of walk("agents").filter((item) => item.endsWith(".md"))) {
   requireFrontmatterFields(file, ["name", "description"]);
 }
@@ -190,6 +209,32 @@ for (const file of walk("commands").filter((item) => item.endsWith(".md") || ite
 
 for (const file of walk("rules").filter((item) => item.endsWith(".mdc"))) {
   requireFrontmatterFields(file, ["description", "alwaysApply"]);
+}
+
+if (existsSync(path.join(root, "hooks/hooks.json"))) {
+  const hooksConfig = readJson("hooks/hooks.json");
+  if (hooksConfig) {
+    if (hooksConfig.version !== 1) {
+      fail("hooks/hooks.json: version must be 1");
+    }
+
+    const hookEntries = Object.values(hooksConfig.hooks ?? {}).flat();
+    if (hookEntries.length === 0) {
+      fail("hooks/hooks.json: hooks must contain at least one entry");
+    }
+
+    for (const entry of hookEntries) {
+      if (!entry.command) {
+        fail("hooks/hooks.json: each hook entry needs a command");
+        continue;
+      }
+
+      const scriptPath = entry.command.split(/\s+/).find((part) => /\.(mjs|cjs|js|sh|py)$/.test(part));
+      if (scriptPath) {
+        assertPathExists("hooks/hooks.json command", scriptPath);
+      }
+    }
+  }
 }
 
 checkNoEmDashes();

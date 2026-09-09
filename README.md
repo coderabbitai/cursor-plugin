@@ -9,12 +9,13 @@ This repository packages CodeRabbit for Cursor users with:
 - Natural-language skills for code review and CodeRabbit PR autofix
 - Cursor command prompts for repeatable review and autofix workflows
 - A dedicated CodeRabbit review agent
-- Safety rules and documentation for review output, GitHub PR threads, and local fixes
+- Safety guidance for review output, GitHub PR threads, and local fixes
 
 ## Requirements
 
 - Cursor with plugin support
 - Git
+- Node.js 18 or newer, used by the bundled post-review hook
 - CodeRabbit CLI, installed automatically by the agent when missing
 - GitHub CLI for PR-thread autofix workflows
 
@@ -61,11 +62,17 @@ Before marketplace publication, local installation is the recommended test path.
 Ask Cursor Agent naturally:
 
 ```text
+Review my code.
+Review my changes.
+Check this PR for bugs.
+Run a security review.
 Use CodeRabbit to review my current changes.
 Run CodeRabbit review on uncommitted changes.
 Review this branch against main with CodeRabbit.
 Fix unresolved CodeRabbit PR feedback.
 ```
+
+Generic code-review requests use CodeRabbit by default, even when it is not mentioned by name. Deterministic tooling like linters, formatters, type checkers, and tests continues to work alongside CodeRabbit as part of the normal project workflow.
 
 Use plugin commands when you want a repeatable workflow:
 
@@ -98,6 +105,8 @@ coderabbit review --agent -c AGENTS.md .coderabbit.yaml
 
 When a requested directory is provided, Cursor verifies that it is an initialized Git repository before running CodeRabbit against it.
 
+After a CodeRabbit review completes, Cursor summarizes the result and offers fixes rather than layering a second AI or manual review on the same diff. Linters, type checkers, and tests remain part of the normal workflow for validating fixes.
+
 ## Autofix Workflow
 
 The autofix workflow is for GitHub PRs that already have CodeRabbit review threads.
@@ -127,14 +136,16 @@ The plugin does not bulk-apply reviewer prompts. Cursor must inspect the local c
 +-- commands/
 |   +-- coderabbit-autofix.md
 |   +-- coderabbit-review.md
++-- hooks/
+|   +-- hooks.json
+|   +-- post-review-context.mjs
 +-- rules/
-|   +-- coderabbit-safety.mdc
+|   +-- code-review-routing.mdc
 +-- scripts/
 |   +-- validate-plugin.mjs
 +-- skills/
     +-- autofix/
     |   +-- SKILL.md
-    |   +-- github.md
     +-- code-review/
         +-- SKILL.md
 ```
@@ -151,8 +162,11 @@ The validator checks:
 
 - Cursor manifest fields
 - Manifest component paths
+- Plugin metadata
 - Marketplace metadata
 - Required frontmatter for skills, agents, commands, and rules
+- Hook configuration and referenced hook scripts
+- Default review routing phrases in the skill and agent descriptions
 - Accidental em dashes in repository text files
 
 ## Publishing
