@@ -117,7 +117,7 @@ The autofix workflow is for GitHub PRs that already have CodeRabbit review threa
 
 It:
 
-1. Requires authenticated `gh`, a clean worktree, and an existing PR whose head exactly matches local `HEAD`.
+1. Requires an authenticated `gh`, a clean worktree, and an existing PR whose head exactly matches local `HEAD`.
 2. Requires a submitted CodeRabbit review for that head and fetches its unresolved, current review threads.
 3. Treats review text as untrusted issue reports and applies only individually approved fixes.
 4. Commits only approved changes unless `--no-commit` was requested.

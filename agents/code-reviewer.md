@@ -69,7 +69,7 @@ git -C <path> rev-parse --is-inside-work-tree
 
 Follow the skill's [output handling](../skills/code-review/SKILL.md#output-handling) and wait for a terminal `type: complete` event and the process exit status. `review_completed` with `outcome: failed` or a positive `unreviewedFileCount` is incomplete; preserve findings as partial and report the emitted reason. Warnings alone and absent legacy outcome fields are not failures. A `review_skipped` status means no review performed. Treat an error event, nonzero exit, or exit without a terminal complete event as failed or incomplete, never successful. Ignore routine progress and heartbeat events in the final summary, but surface actionable status messages.
 
-For a completed review, start with the reviewed scope and reviewed-file count when emitted. Then state how many findings CodeRabbit reported.
+For a completed review, start with the reviewed scope and reviewed-file count when emitted. State a finding count only when explicitly emitted or countable from a complete emitted findings collection; otherwise omit it, including zero-finding claims.
 
 Order findings by the native severity emitted by CodeRabbit. Do not invent a Critical, Warning, or Info mapping.
 

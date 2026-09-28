@@ -33,7 +33,7 @@ On macOS, Linux, or WSL, if `coderabbit --version` still fails after refreshing 
 
 Do not run a routine standalone authentication preflight. Start `coderabbit review --agent` and let its structured agent authentication flow continue the review. If that flow fails or requires user action, surface the exact message and next step.
 
-Before starting, follow the skill's [live authentication handoff](../skills/code-review/SKILL.md#live-authentication-handoff), including EU first-login and headless API-key setup when applicable: consume incremental output when the tool supports it, present authentication actions immediately, and keep the same process alive while the user signs in. If live output or callback access is unavailable, use the terminal handoff in that section; do not wait for a hidden login to time out.
+Before starting, follow the skill's [live authentication handoff](../skills/code-review/SKILL.md#live-authentication-handoff), including EU first-login and headless API-key setup when applicable: consume incremental output when the tool supports it, present authentication actions immediately, and keep the same process alive while the user signs in. If live output or callback access is unavailable, stop the pending attempt and use the terminal handoff in that section. After sign-in succeeds, start a new review invocation with the original scope; do not wait for a hidden login to time out or try to resume a stopped process.
 
 ## Build Review Command
 
@@ -73,7 +73,7 @@ Parse CodeRabbit's newline-delimited agent output using the skill's [output hand
 
 If the process exits without a terminal `type: complete` event, report the result as incomplete or unsupported, never successful.
 
-If the error is an install or authentication failure, guide the user through the exact setup failure, then resume the review once setup succeeds. If the error is a rate limit, share the exact message, stop, and offer to re-run the review once the limit resets.
+If the error is an install or authentication failure, guide the user through the exact setup failure, then start a new review invocation with the original scope once setup succeeds. If the error is a rate limit, share the exact message, stop, and offer to re-run the review once the limit resets.
 
 ## After The Review
 
@@ -82,7 +82,7 @@ Summarize the CodeRabbit result and any fixes the user requests. CodeRabbit's re
 Return:
 
 - Reviewed scope and reviewed-file count when emitted
-- Finding count
+- Finding count only when explicitly emitted or countable from a complete emitted findings collection; otherwise omit it, including zero-finding claims
 - Findings ordered by the native severity emitted by CodeRabbit
 - File path, comment or code-generation instructions, and suggestions when emitted
 - Suggested next fixes based only on the available finding details

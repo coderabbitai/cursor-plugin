@@ -90,13 +90,14 @@ Require at least one submitted CodeRabbit review for the exact current PR head:
 pr_url="https://github.com/OWNER/REPO/pull/NUMBER"
 local_head=$(git rev-parse HEAD)
 pr_id=$(gh pr view "$pr_url" --json id --jq '.id')
-review_count=$(gh api graphql \
+review_counts=$(gh api graphql --paginate \
   -F prId="$pr_id" \
-  -f query='query($prId:ID!) {
+  -f query='query($prId:ID!, $endCursor:String) {
     node(id:$prId) {
       ... on PullRequest {
         headRefOid
-        reviews(last:100) {
+        reviews(first:100, after:$endCursor) {
+          pageInfo { hasNextPage endCursor }
           nodes {
             submittedAt
             author { login }
@@ -108,30 +109,38 @@ review_count=$(gh api graphql \
   }' \
   --jq "
     .data.node as \$pr
-    | if \$pr.headRefOid != \"$local_head\" then 0 else
+    | if \$pr.headRefOid == \"$local_head\" then
         ([
           \$pr.reviews.nodes[]?
-          | select(.submittedAt != null and .commit.oid == \$pr.headRefOid)
+          | select(.submittedAt != null and .commit.oid == \"$local_head\")
           | select(
               .author.login == \"coderabbitai\"
               or .author.login == \"coderabbit[bot]\"
               or .author.login == \"coderabbitai[bot]\"
             )
         ] | length)
-      end
-  ")
+      else -1 end
+  ") || exit 1
+review_count=0
+while IFS= read -r page_count; do
+  if [ -z "$page_count" ] || [ "$page_count" -lt 0 ]; then
+    review_count=0
+    break
+  fi
+  review_count=$((review_count + page_count))
+done <<< "$review_counts"
 test "$review_count" -gt 0
 ```
 
-This single snapshot requires both remote head equality with local `HEAD` and a submitted CodeRabbit review for that same head. If the count is zero, stop. Tell the user to synchronize the branch or wait for CodeRabbit to review it, then rerun autofix. Do not rely on historical, copy-dependent "review in progress" comment text.
+This paginated lookup requires remote head equality with local `HEAD` on every page and a submitted CodeRabbit review for that same head. If the count is zero or retrieval fails, stop. Tell the user to synchronize the branch or wait for CodeRabbit to review it, then rerun autofix. Do not rely on historical, copy-dependent "review in progress" comment text.
 
-Fetch and directly print the selected review threads with GitHub GraphQL pagination and `gh`'s built-in `--jq` support:
+Fetch the selected review threads with GitHub GraphQL pagination and `gh`'s built-in per-page `--jq` support:
 
 ```bash
 pr_url="https://github.com/OWNER/REPO/pull/NUMBER"
 local_head=$(git rev-parse HEAD)
 pr_id=$(gh pr view "$pr_url" --json id --jq '.id')
-gh api graphql --paginate --slurp \
+thread_pages=$(gh api graphql --paginate \
   -F prId="$pr_id" \
   -f query='query($prId:ID!, $endCursor:String) {
     node(id:$prId) {
@@ -159,7 +168,7 @@ gh api graphql --paginate --slurp \
     }
   }' \
   --jq "[
-    .[].data.node
+    .data.node
     | select(.headRefOid == \"$local_head\")
     | .reviewThreads.nodes[]
     | select(.isResolved == false and .isOutdated == false)
@@ -168,13 +177,14 @@ gh api graphql --paginate --slurp \
         or .comments.nodes[0].author.login == \"coderabbit[bot]\"
         or .comments.nodes[0].author.login == \"coderabbitai[bot]\"
       )
-  ]"
+  ]") || exit 1
 
-current_pr_head=$(gh pr view "$pr_url" --json headRefOid --jq '.headRefOid')
-test "$current_pr_head" = "$local_head"
+current_pr_head=$(gh pr view "$pr_url" --json headRefOid --jq '.headRefOid') || exit 1
+test "$current_pr_head" = "$local_head" || exit 1
+printf '%s\n' "$thread_pages"
 ```
 
-Treat the printed JSON array as the selected thread list only if the final head equality test succeeds. Otherwise discard it and stop because the PR advanced during retrieval. A standalone `jq` installation is not required. If the array is empty, report that there are no unresolved current CodeRabbit threads and stop.
+Combine the printed per-page JSON arrays into the selected thread list only after the final head equality test succeeds. On retrieval failure or a changed head, discard the pages and stop. A standalone `jq` installation is not required. If every array is empty, report that there are no unresolved current CodeRabbit threads and stop.
 
 ## Step 5: Parse And Display Issues
 
