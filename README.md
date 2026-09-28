@@ -89,6 +89,8 @@ The review command resolves the requested repository, checks local prerequisites
 coderabbit review --agent
 ```
 
+When browser sign-in is needed, Cursor must show the sign-in action while the command is still running. The [live authentication handoff](skills/code-review/SKILL.md#live-authentication-handoff) describes keeping that process alive and using a user-controlled terminal in the same review environment and credential-visible context when live output or callback access is unavailable.
+
 Then Cursor orders findings by CodeRabbit's native severity and can help apply fixes. Supported scope flags include:
 
 ```bash

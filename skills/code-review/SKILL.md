@@ -83,6 +83,12 @@ Do not run a routine standalone authentication preflight. Start the review and l
 
 ## Run Review
 
+### Live authentication handoff
+
+Use a command-tool mode that exposes incremental output while preserving the running process, when available. Read or poll that output while the review runs. Surface authentication `action_required` messages immediately. For `open_fallback_url`, show the user the message and `fallbackAuthUrl` while keeping the same process alive. Do not wait for the command to exit before presenting the sign-in link. Continue reading that process until authentication and the review finish or fail; do not start a second review while it is running.
+
+The browser must reach the CLI's localhost callback; remote environments may need port forwarding. If sign-in is needed but the tool cannot expose live output, or the browser cannot reach the callback, stop the pending attempt and ask the user to run `coderabbit auth login` in a user-controlled terminal in the same review environment and credential-visible context. Resume the original review with its requested scope after sign-in succeeds. Never reuse a URL from a closed attempt, read credential files, or ask for pasted OAuth tokens.
+
 Default review:
 
 ```bash

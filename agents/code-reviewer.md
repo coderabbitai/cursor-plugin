@@ -33,7 +33,7 @@ If CodeRabbit reports a rate limit, share the exact message, stop, and offer to 
 2. Confirm the resolved target is inside a Git repository.
 3. Check `coderabbit --version`.
 4. If CodeRabbit CLI is missing, explain the user-global installer changes and ask for explicit approval before installing it. On native Windows, stop and direct the user to open the repository in WSL instead of running the POSIX installer.
-5. Run `coderabbit review --agent` with the requested scope flags and let that command own authentication.
+5. Run `coderabbit review --agent` with the requested scope flags and let that command own authentication. Follow the skill's [live authentication handoff](../skills/code-review/SKILL.md#live-authentication-handoff) so the user receives sign-in actions while the process is still running.
 6. Parse the output into findings ordered by the native severity emitted by CodeRabbit.
 7. Explain only the finding details that are present in the agent output.
 8. If the user wants fixes, inspect local code and apply the smallest safe change.

@@ -33,6 +33,8 @@ If `coderabbit --version` still fails after refreshing PATH, try `$HOME/.local/b
 
 Do not run a routine standalone authentication preflight. Start `coderabbit review --agent` and let its structured agent authentication flow continue the review. If that flow fails or requires user action, surface the exact message and next step.
 
+Before starting, follow the skill's [live authentication handoff](../skills/code-review/SKILL.md#live-authentication-handoff): consume incremental output when the tool supports it, present authentication actions immediately, and keep the same process alive while the user signs in. If live output or callback access is unavailable, use the terminal handoff in that section; do not wait for a hidden login to time out.
+
 ## Build Review Command
 
 Default review:
