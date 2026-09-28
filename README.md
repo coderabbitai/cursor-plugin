@@ -18,9 +18,9 @@ This repository packages CodeRabbit for Cursor users with:
 - CodeRabbit CLI for review workflows; Cursor asks before installing it when missing
 - GitHub CLI for PR-thread autofix workflows
 
-On Windows, use the CodeRabbit CLI and this plugin from a WSL environment.
+CLI review is available on macOS, Linux, WSL, and native Windows x64. Native Windows uses the [PowerShell installer](https://docs.coderabbit.ai/cli/windows); see the skill's [installation instructions](skills/code-review/SKILL.md#prerequisites). The autofix workflow's shell examples require a POSIX shell; native PowerShell autofix has not been validated.
 
-When the CodeRabbit CLI is missing, the plugin explains that the official installer writes the binary to user-global storage and may update shell profiles. It asks for explicit approval before running:
+When the CodeRabbit CLI is missing, the plugin explains that the official installer writes the binary to user-global storage and may update PATH or shell profiles. On macOS, Linux, or WSL, it asks for explicit approval before running:
 
 ```bash
 curl -fsSL https://cli.coderabbit.ai/install.sh | CI=1 sh
@@ -91,20 +91,25 @@ coderabbit review --agent
 
 When browser sign-in is needed, Cursor must show the sign-in action while the command is still running. The [live authentication handoff](skills/code-review/SKILL.md#live-authentication-handoff) describes keeping that process alive and using a user-controlled terminal in the same review environment and credential-visible context when live output or callback access is unavailable.
 
+That section also covers EU first-login selection and secure Agentic API-key setup when browser authentication is unavailable.
+
 Then Cursor orders findings by CodeRabbit's native severity and can help apply fixes. Supported scope flags include:
 
 ```bash
-coderabbit review --agent -t committed
-coderabbit review --agent -t uncommitted
+coderabbit review --agent --committed
+coderabbit review --agent --uncommitted
+coderabbit review --agent --uncommitted --include-untracked
 coderabbit review --agent --base main
 coderabbit review --agent --base-commit <sha>
 coderabbit review --agent --dir <path>
 coderabbit review --agent -c AGENTS.md .coderabbit.yaml
 ```
 
-When a requested directory is provided, Cursor verifies that it is an initialized Git repository before running CodeRabbit against it.
+Cursor checks CLI help before selecting flags and retains the legacy `-t` fallback on older clients. New untracked files need `--include-untracked`; unsupported coverage is reported rather than silently omitted. See [review scope](skills/code-review/SKILL.md#review-scope). When a requested directory is provided, Cursor verifies that it is an initialized Git repository before running CodeRabbit against it.
 
-After a CodeRabbit review completes, Cursor reports only the severities and finding details emitted by the CLI. A completed review with zero findings is reported as "CodeRabbit found no findings in the reviewed scope." A skipped review is reported as skipped, not clean. Linters, type checkers, and tests remain part of the normal workflow for validating fixes.
+Cursor checks completion fields and the process exit status before reporting success. Failed or incomplete runs retain any findings as partial results. After a successful review, Cursor reports only the severities and finding details emitted by the CLI. A successful review with zero findings is reported as "CodeRabbit found no findings in the reviewed scope." A skipped review is reported as skipped, not clean. Linters, type checkers, and tests remain part of the normal workflow for validating fixes.
+
+Requested fix-review loops use the user's run limit or default to at most three review invocations per change set. At the limit, Cursor reports remaining findings and edits not re-reviewed.
 
 ## Autofix Workflow
 

@@ -32,12 +32,12 @@ If CodeRabbit reports a rate limit, share the exact message, stop, and offer to 
 1. Resolve the review target from `--dir` when provided, otherwise use the current directory.
 2. Confirm the resolved target is inside a Git repository.
 3. Check `coderabbit --version`.
-4. If CodeRabbit CLI is missing, explain the user-global installer changes and ask for explicit approval before installing it. On native Windows, stop and direct the user to open the repository in WSL instead of running the POSIX installer.
-5. Run `coderabbit review --agent` with the requested scope flags and let that command own authentication. Follow the skill's [live authentication handoff](../skills/code-review/SKILL.md#live-authentication-handoff) so the user receives sign-in actions while the process is still running.
+4. If CodeRabbit CLI is missing, explain the user-global installer changes and ask for explicit approval before installing it. On native Windows, follow the skill's [PowerShell installation instructions](../skills/code-review/SKILL.md#prerequisites).
+5. Run `coderabbit review --agent` with the requested scope flags and let that command own authentication. Follow the skill's [live authentication handoff](../skills/code-review/SKILL.md#live-authentication-handoff), including EU first-login and headless API-key setup when applicable, so the user receives sign-in actions while the process is still running.
 6. Parse the output into findings ordered by the native severity emitted by CodeRabbit.
 7. Explain only the finding details that are present in the agent output.
 8. If the user wants fixes, inspect local code and apply the smallest safe change.
-9. Re-run CodeRabbit when fixes are complete and the user asked for a fix-review loop.
+9. Re-run CodeRabbit when fixes are complete and the user asked for a fix-review loop, within the skill's [run budget and stopping conditions](../skills/code-review/SKILL.md#fix-review-loop).
 
 After the user explicitly approves installation in macOS, Linux, or WSL, run:
 
@@ -49,9 +49,12 @@ coderabbit --version
 
 ## Scope Flags
 
-- `-t all` reviews all changes.
-- `-t committed` reviews committed changes only.
-- `-t uncommitted` reviews uncommitted changes only.
+Follow the skill's [review scope](../skills/code-review/SKILL.md#review-scope) guidance to check flag support, use legacy fallback when needed, and include requested untracked files. On current clients:
+
+- No scope flag reviews committed and uncommitted tracked changes.
+- `--committed` reviews committed changes only.
+- `--uncommitted` reviews staged changes and unstaged edits to tracked files.
+- `--include-untracked` also includes non-ignored files not added to Git; do not combine it with committed-only scope.
 - `--base <branch>` compares against a branch.
 - `--base-commit <sha>` compares against a commit.
 - `--dir <path>` reviews a specific Git repository directory.
@@ -64,7 +67,7 @@ git -C <path> rev-parse --is-inside-work-tree
 
 ## Output
 
-Require a terminal `type: complete` agent event before declaring an outcome. Treat its `review_completed` status as completed and its `review_skipped` status as no review performed. Treat an error event, nonzero exit, or exit without a terminal complete event as failed or incomplete, never successful. Ignore routine progress and heartbeat events in the final summary, but surface actionable status messages.
+Follow the skill's [output handling](../skills/code-review/SKILL.md#output-handling) and wait for a terminal `type: complete` event and the process exit status. `review_completed` with `outcome: failed` or a positive `unreviewedFileCount` is incomplete; preserve findings as partial and report the emitted reason. Warnings alone and absent legacy outcome fields are not failures. A `review_skipped` status means no review performed. Treat an error event, nonzero exit, or exit without a terminal complete event as failed or incomplete, never successful. Ignore routine progress and heartbeat events in the final summary, but surface actionable status messages.
 
 For a completed review, start with the reviewed scope and reviewed-file count when emitted. Then state how many findings CodeRabbit reported.
 

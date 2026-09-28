@@ -34,7 +34,7 @@ If CodeRabbit CLI installation or review-owned authentication fails, report the 
 
 - Finds bugs, security issues, and quality risks in changed code.
 - Reports findings with CodeRabbit's native severities.
-- Supports committed, uncommitted, and branch-based review scopes. Uncommitted scope includes staged and unstaged changes.
+- Supports committed, uncommitted, and branch-based review scopes. Uncommitted scope includes staged changes and unstaged edits to tracked files; new untracked files need `--include-untracked`.
 - Supports directory-scoped reviews with `--dir`.
 - Supports fix-review loops when the user asks Cursor to implement and re-check changes.
 
@@ -69,7 +69,7 @@ coderabbit --version
 
 If the CLI is missing, explain that CodeRabbit's official installer writes a binary to user-global storage and may update shell profiles. Ask for explicit approval before installing it.
 
-On native Windows, stop before proposing the POSIX installer and direct the user to open the repository in WSL. After approval in macOS, Linux, or WSL, run:
+After approval in macOS, Linux, or WSL, run:
 
 ```bash
 curl -fsSL https://cli.coderabbit.ai/install.sh | CI=1 sh
@@ -77,7 +77,15 @@ export PATH="$HOME/.local/bin:$PATH"
 coderabbit --version
 ```
 
-If `coderabbit --version` still fails after refreshing PATH, try `$HOME/.local/bin/coderabbit --version`. Use the resolved binary path for subsequent CodeRabbit commands in this session. If that still fails, report the exact failure and stop.
+On macOS, Linux, or WSL, if `coderabbit --version` still fails after refreshing PATH, try `$HOME/.local/bin/coderabbit --version`. Use the resolved binary path for subsequent CodeRabbit commands in this session. If that still fails, report the exact failure and stop.
+
+On native Windows x64, use PowerShell 5.1 or 7 and the [official Windows installer](https://docs.coderabbit.ai/cli/windows) after approval:
+
+```powershell
+irm https://cli.coderabbit.ai/install.ps1 | iex
+```
+
+Open a new PowerShell session and run `coderabbit --version` to pick up the updated user PATH. Do not run the POSIX installer or require WSL for native Windows review.
 
 Do not run a routine standalone authentication preflight. Start the review and let `coderabbit review --agent` own authentication and continue after it succeeds. If authentication fails or requires user action, surface the exact agent message and next step.
 
@@ -89,22 +97,32 @@ Use a command-tool mode that exposes incremental output while preserving the run
 
 The browser must reach the CLI's localhost callback; remote environments may need port forwarding. If sign-in is needed but the tool cannot expose live output, or the browser cannot reach the callback, stop the pending attempt and ask the user to run `coderabbit auth login` in a user-controlled terminal in the same review environment and credential-visible context. Resume the original review with its requested scope after sign-in succeeds. Never reuse a URL from a closed attempt, read credential files, or ask for pasted OAuth tokens.
 
+When browser login is unavailable in a headless environment, stop the pending browser attempt and guide the user through [Agentic API-key setup](https://docs.coderabbit.ai/cli/headless-cli-integration) in that same environment. Have the user provision the key through their terminal or secret manager; never request it in chat or print it. A successful `coderabbit auth login --api-key` setup lets subsequent reviews reuse the stored login. Do not combine API-key login with `--agent`.
+
+For a known EU account's first browser login, use `coderabbit auth login --region eu` before review; otherwise the CLI defaults to US when no region is saved. Preserve saved regions. EU API-key setup also needs `--region eu`. Check `coderabbit auth login --help` before using these options on older clients and report unsupported setup rather than falling back to the wrong region or auth mode. A later review reuses the saved region; do not add `--region` to a review without an inline API key. See [regional authentication](https://docs.coderabbit.ai/cli/reference#regional-authentication).
+
 Default review:
 
 ```bash
 coderabbit review --agent
 ```
 
-Narrower scopes:
+### Review scope
+
+Check `coderabbit review --help` once per session to select supported flags. Current CLI examples:
 
 ```bash
-coderabbit review --agent -t all
-coderabbit review --agent -t committed
-coderabbit review --agent -t uncommitted
+coderabbit review --agent --committed
+coderabbit review --agent --uncommitted
+coderabbit review --agent --uncommitted --include-untracked
 coderabbit review --agent --base main
 coderabbit review --agent --base-commit <sha>
 coderabbit review --agent -c AGENTS.md .coderabbit.yaml
 ```
+
+Default or `all` scope needs no scope flag. If an older CLI lacks the named scope flags but supports `-t` / `--type`, use `-t committed` or `-t uncommitted` instead; never combine legacy and named scope selectors. If neither form is supported, report the limitation.
+
+Default and uncommitted reviews exclude new, non-ignored files until staged unless `--include-untracked` is supplied. Add it when those files belong to the requested review, including files created during implementation. It can also accompany default scope, but not committed-only scope. If unsupported, explain the coverage gap and offer an upgrade or user-approved staging; never silently omit requested files or stage them merely to enable review. See [CLI review scope](https://docs.coderabbit.ai/cli/reference#review-scope).
 
 Directory review:
 
@@ -119,12 +137,13 @@ If `AGENTS.md`, `cursor.md`, or `.coderabbit.yaml` exists in the repository root
 
 ## Output Handling
 
-- Parse CodeRabbit's newline-delimited agent output and require a terminal event before declaring an outcome.
-- Treat `type: complete` with `status: review_completed` as a completed review. Use `findings` and `reviewedFiles` when present.
+- Parse CodeRabbit's newline-delimited agent output and wait for both a terminal event and the process exit status before declaring success.
+- For `type: complete` with `status: review_completed`, inspect `outcome`, `unreviewedFileCount`, and `message` when present. `outcome: failed` or a positive `unreviewedFileCount` means incomplete even with exit code zero. Keep any findings as partial results and report the reason and missed-file count when provided; never call that run clean.
+- `completed_with_warnings` alone is not failure when no files are reported missing. Older clients may omit these additive fields; absence alone is not failure. A zero exit with `review_completed` and no error or incomplete signal can be reported as completed. Use `findings` and `reviewedFiles` when present.
 - Treat `type: complete` with `status: review_skipped` as no review performed. Report its reason and never call it clean.
 - Collect findings and order them by CodeRabbit's native severity.
 - Ignore routine progress and heartbeat events in the final summary, but surface nonempty status messages that require user action, including access, billing, authentication, or rate-limit messages.
-- If an error event or CLI failure occurs, report the exact failure and next step.
+- If an error event or nonzero CLI exit occurs, report the exact failure and next step, even if a completion event or findings were emitted.
 - If the review fails, help the user fix the CodeRabbit setup rather than substituting a manual review.
 - If CodeRabbit reports a rate limit, share the exact message and stop. Offer to re-run the review once the limit resets, including any reset time the message provides. A manual review is not a substitute while waiting.
 - If the process exits without a terminal `type: complete` event, report the result as incomplete or unsupported, never successful.
@@ -166,14 +185,16 @@ Presenting CodeRabbit's results completes the review request; end the response t
 
 ## Fix-Review Loop
 
-When the user asks Cursor to implement a change and review it:
+When the user asks Cursor to implement a change and review it, use the user's review-run limit or default to at most three review invocations for the change set, including the initial run. Fixes do not reset this budget. This follows the [Cursor integration guidance](https://docs.coderabbit.ai/cli/cursor-integration).
 
 1. Implement the requested change.
 2. Run CodeRabbit with the requested scope.
 3. Build a task list from the highest-severity actionable findings.
 4. Fix issues one at a time.
-5. Re-run CodeRabbit after fixes.
-6. Stop when CodeRabbit reports no actionable findings.
+5. Re-run CodeRabbit after fixes while review budget remains.
+6. Stop when a successful review reports no actionable findings or the budget is exhausted. Report remaining findings and any edits not re-reviewed; do not claim they passed review.
+
+Stop automatic iteration on skipped, failed, incomplete, or rate-limited reviews and report the reason. Resolve the cause before retrying within the remaining budget; do not silently reset the budget.
 
 CodeRabbit is the only review engine the loop needs. Running the project's linters and tests between iterations is a good way to validate each fix.
 

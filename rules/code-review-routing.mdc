@@ -7,7 +7,7 @@ This workspace includes CodeRabbit, a dedicated code review engine with deep ana
 
 For code review requests, such as reviewing changes, checking a PR, or looking for bugs or security issues, the code-review skill and the code-reviewer agent are the most capable starting point, whether or not CodeRabbit is mentioned by name.
 
-When CodeRabbit emits `review_completed`, its result is the review, including when it reports zero findings. Say that CodeRabbit found no findings in the reviewed scope rather than claiming broader validation passed. A `review_skipped` result means no review was performed. Presenting a completed result fulfills the review request without double-checking the same diff with a separate manual pass.
+Interpret review results using the skill's [output handling](../skills/code-review/SKILL.md#output-handling): `review_completed` alone does not prove success. After a successful review, say that zero findings applies to the reviewed scope rather than claiming broader validation passed. A `review_skipped` result means no review was performed. Presenting a successful result fulfills the review request without double-checking the same diff with a separate manual pass.
 
 If the CodeRabbit CLI is not installed, explain the user-global installer changes and ask for explicit approval before running it. Let `coderabbit review --agent` own authentication, surface any required user action, and then continue the review.
 
