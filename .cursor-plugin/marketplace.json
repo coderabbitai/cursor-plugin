@@ -5,13 +5,13 @@
     "email": "support@coderabbit.ai"
   },
   "metadata": {
-    "description": "Run CodeRabbit reviews for code, PR, security, and quality checks, plus guarded autofix for unresolved GitHub PR feedback in Cursor."
+    "description": "Read CodeRabbit pull request reviews through hosted MCP, review local changes with the CodeRabbit CLI, and apply approved GitHub PR fixes in Cursor."
   },
   "plugins": [
     {
       "name": "coderabbit",
       "source": ".",
-      "description": "Run CodeRabbit reviews for code, PR, security, and quality checks, plus guarded autofix for unresolved GitHub PR feedback in Cursor."
+      "description": "Read CodeRabbit pull request reviews through hosted MCP, review local changes with the CodeRabbit CLI, and apply approved GitHub PR fixes in Cursor."
     }
   ]
 }

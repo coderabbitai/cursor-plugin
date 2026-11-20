@@ -1,8 +1,8 @@
 {
   "name": "@coderabbitai/cursor-plugin",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
-  "description": "Run CodeRabbit reviews and guarded GitHub PR feedback autofix workflows in Cursor.",
+  "description": "Read CodeRabbit pull request reviews through hosted MCP, review local changes with the CodeRabbit CLI, and apply approved GitHub PR fixes in Cursor.",
   "license": "MIT",
   "type": "module",
   "scripts": {

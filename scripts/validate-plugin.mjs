@@ -1,11 +1,12 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { isDeepStrictEqual } from "node:util";
 import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
 const failures = [];
 const expectedPluginDescription =
-  "Run CodeRabbit reviews for code, PR, security, and quality checks, plus guarded autofix for unresolved GitHub PR feedback in Cursor.";
+  "Read CodeRabbit pull request reviews through hosted MCP, review local changes with the CodeRabbit CLI, and apply approved GitHub PR fixes in Cursor.";
 
 function fail(message) {
   failures.push(message);
@@ -143,6 +144,12 @@ if (plugin) {
       assertPathExists(`.cursor-plugin/plugin.json ${field}`, value);
     }
   }
+}
+
+const mcp = readJson("mcp.json");
+const expectedMcp = { mcpServers: { coderabbit: { url: "https://mcp.coderabbit.ai/" } } };
+if (!isDeepStrictEqual(mcp, expectedMcp) || plugin?.mcpServers !== undefined) {
+  fail("Use root mcp.json to declare the hosted CodeRabbit server with native Cursor authentication.");
 }
 
 const marketplace = readJson(".cursor-plugin/marketplace.json");
