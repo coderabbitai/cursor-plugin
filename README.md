@@ -14,7 +14,8 @@ This repository packages CodeRabbit for Cursor users with:
 ## Requirements
 
 - Cursor with plugin support
-- Git
+- A CodeRabbit account for hosted MCP
+- Git for local review and PR-thread autofix
 - CodeRabbit CLI for review workflows; Cursor asks before installing it when missing
 - GitHub CLI for PR-thread autofix workflows
 
@@ -48,11 +49,17 @@ git clone https://github.com/coderabbitai/cursor-plugin.git ~/.cursor/plugins/lo
 
 Restart Cursor or reload plugins after cloning.
 
-Before marketplace publication, local installation is the recommended test path. After publication, users should be able to install from Cursor with:
+For the published version, install from the [Cursor Marketplace](https://cursor.com/marketplace/coderabbit) or enter:
 
 ```text
 /add-plugin coderabbit
 ```
+
+## Connect to CodeRabbit MCP
+
+In Cursor settings, open the plugin's CodeRabbit MCP server and choose **Connect**. Complete browser sign-in, select your CodeRabbit organization, and review the requested permissions. Cursor manages this connection. Local CLI reviews use their own sign-in.
+
+Ask "Which CodeRabbit organization am I connected to?" to check the connection. To read an existing review, ask "Show the CodeRabbit review on this PR" and give the PR URL. The server uses your selected organization and approved scopes. PR reads require repository and pull request read access. See the [CodeRabbit MCP guide](https://docs.coderabbit.ai/api/mcp) for supported organizations and permissions.
 
 ## Usage
 
@@ -132,6 +139,7 @@ The plugin does not bulk-apply reviewer prompts. Cursor must inspect the local c
 +-- .cursor-plugin/
 |   +-- plugin.json
 |   +-- marketplace.json
++-- mcp.json
 +-- agents/
 |   +-- code-reviewer.md
 +-- commands/
